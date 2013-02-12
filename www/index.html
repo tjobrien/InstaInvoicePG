@@ -7,18 +7,13 @@
 	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.1/jquery.mobile-1.1.1.min.css" />
 	<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
 	<script src="http://code.jquery.com/mobile/1.1.1/jquery.mobile-1.1.1.min.js"></script>	
-    <script type="text/javascript" src="cordova-2.0.0.js"></script>
+    <script type="text/javascript" src="cordova-2.2.0.js"></script>
     <script type="text/javascript" src="main.js"></script>		
     
     <script type="text/javascript">
  	var has_account;
- 
-	
-		document.addEventListener("deviceready", onDeviceReady, false);
-		
-		function onDeviceReady() {
-		
-   			//alert("device ready");
+ 			app.initialize();
+			alert("Device Ready");
    			getFileSystem();
    		}
 	
