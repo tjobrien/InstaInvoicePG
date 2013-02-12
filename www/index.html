@@ -1,0 +1,702 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>InstaInvoice by Breeasy.com</title>
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.1/jquery.mobile-1.1.1.min.css" />
+	<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.1.1/jquery.mobile-1.1.1.min.js"></script>	
+    <script type="text/javascript" src="cordova-2.0.0.js"></script>
+    <script type="text/javascript" src="main.js"></script>		
+    
+    <script type="text/javascript">
+ 	var has_account;
+ 
+	
+		document.addEventListener("deviceready", onDeviceReady, false);
+		
+		function onDeviceReady() {
+		
+   			//alert("device ready");
+   			getFileSystem();
+   		}
+	
+	</script>
+	<script type="text/javascript">
+	$(document).bind("pageinit", function(){
+	//	alert("doc.bind - index.html");
+		
+		$('#contacts').live('pageshow',function(event){
+		console.log("pageshow");
+	  // All of your DOM modification goodness here.
+	  console.log("contacts " + contacts);
+	  	if(user){
+			if(!contacts){
+			$.mobile.showPageLoadingMsg();
+				getContacts("contacts");
+			$.mobile.showPageLoadingMsg(true);
+			}
+			else{
+				populateContacts();
+			}
+		}
+		
+		});
+		$("#signup_form").submit(function(event){
+		//var error = false;
+		$("#response").text("");
+		$("#response2").text("");
+		$.mobile.showPageLoadingMsg("a", "Sending details to the server...", "false");
+	    var str = $("#signup_form").serializeArray();
+		console.log("data:  " + str);
+		user = null;
+		user_details = null;
+		
+		$.ajax({
+	        url: "http://billing.breeasy.com/api/v1/users.json",
+	        type: "post",
+	        data: str,
+	        dataType: "json",
+	        
+	       	// callback handler that will be called on success
+	        success: function(response, textStatus, jqXHR){
+	            // log a message to the console
+	            console.log("Hooray, it worked!");
+				//$('#results').text("it worked");
+				console.log(textStatus);
+				console.log("Success " + response);
+				$("#response").text("Your Account has been created!");
+				$("#response2").text("");
+				user = response;
+				console.log("user " + user);
+	        },
+	        // callback handler that will be called on error
+	        error: function(jqXHR, textStatus, errorThrown){
+	            // log the error to the console
+	            console.log(
+	                "The following error occurred: "+
+	                textStatus);
+				error = jqXHR;
+				var error_text = $.parseJSON(error['responseText']);
+				//console.log(error_text.errors.email[0]);
+				if(error_text.errors.email != null){
+					$("#response").text("Email " + error_text.errors.email[0]);
+				}
+				if(error_text.errors.password != null){
+					$("#response2").text("Password " + error_text.errors.password[0]);
+				}
+	        },
+	        // callback handler that will be called on completion
+	        // which means, either on success or error
+	        complete: function(){
+	        if(user){
+				//now lets do something with user data
+				getFileWriterSystem();
+				$("#status").text("Welcome, " + user['email'] + " You will need to add at least one contact before you can create an invoice.");
+				$("#response").text("");
+				$("#response2").text("");
+				contacts = null;
+				invoices = null;
+				$.mobile.changePage( "#user_details", { transition: "slideup"} )
+			
+			}
+			else
+			{
+				
+			}
+	        $.mobile.hidePageLoadingMsg();
+	        
+	        
+	     	} //complete
+		
+	    	}); //ajax
+		
+		return false;
+		
+		});
+		
+		$("#login_form").submit(function(event){
+		//var error = false;
+		$("#response3").text("");
+		$.mobile.showPageLoadingMsg("a", "Sending details to the server...", "false");
+	    var str = $("#email_address").val();
+		var pwd = $("#password").val();
+		console.log("data:  " + str);
+		
+		$.ajax({
+	        url: "http://billing.breeasy.com/api/v1/user/login.json?email=" + str + "&password=" + pwd,
+	        type: "get",
+	       // data: str,
+	        dataType: "json",
+	        
+	       	// callback handler that will be called on success
+	        success: function(response, textStatus, jqXHR){
+	            // log a message to the console
+	            console.log("Hooray, it worked!");
+				//$('#results').text("it worked");
+				user = response;
+	        },
+	        // callback handler that will be called on error
+	        error: function(jqXHR, textStatus, errorThrown){
+	            // log the error to the console
+	            console.log(
+	                "The following error occurred: "+
+	                textStatus);
+				console.log("Error "  + jqXHR)
+				error = jqXHR;
+				// $.each(error, function(index, value) {
+				// 	console.log("error_index " + index);
+				// });
+				var error_text = $.parseJSON(error['responseText']);
+				//console.log(error_text.errors.email[0]);
+
+	        },
+	        // callback handler that will be called on completion
+	        // which means, either on success or error
+	        complete: function(){
+	        if(user){
+				//now lets do something with user data
+				// $.each(user, function(index, value) {
+				// 	console.log("index " + index);
+				// });
+				$("#email_address").val("");
+				$("#password").val("");
+				$("#response3").text("Your have successfully logged in and are now synced.");
+				contacts = null;
+				invoices = null;
+				getFileWriterSystem();
+				getUserDetails();
+				//getFileSystem();
+			
+			
+			}
+			else
+			{
+				$("#response3").text("Sorry, your credentials could not be found.");
+			}
+	        $.mobile.hidePageLoadingMsg();
+	        
+	        
+	     	} //complete
+		
+	    	}); //ajax
+		
+		return false;
+		
+		});
+		
+		
+	}); //document
+	
+	$('#invoices').live('pageshow', function(event){
+	 console.log("contacts " + contacts);
+	  	if(user){
+			if(!invoices){
+			$.mobile.showPageLoadingMsg();
+				getInvoices();
+			$.mobile.showPageLoadingMsg(true);
+			}
+			else{
+				populateInvoices();
+			}
+		}
+		else {
+			navigator.notification.alert("You will need to login or sign up first.", null, "No User");
+		}
+			//getInvoices();
+			
+		});
+		
+	$('#add_contact_page').live('pageshow', function(event){
+		//alert("pageshow - add_contact_page");
+		$('#contact_user_id').val(user['id']);
+		var contact;
+		$("#new_contact_form").submit(function(event){
+					$.mobile.showPageLoadingMsg("a", "Sending details to the server...", "false");
+				    var str = $("#new_contact_form").serializeArray();
+					console.log("data:  " + str);
+
+					$.ajax({
+				        url: "http://billing.breeasy.com/api/v1/contacts.json",
+				        type: "post",
+				        data: str,
+				        dataType: "json",
+
+
+				       	// callback handler that will be called on success
+				        success: function(response, textStatus, jqXHR){
+				            // log a message to the console
+				            console.log("Hooray, it worked!");
+							//$('#results').text("it worked");
+							contact = response;
+				        },
+				        // callback handler that will be called on error
+				        error: function(jqXHR, textStatus, errorThrown){
+				            // log the error to the console
+				            console.log(
+				                "The following error occurred: "+
+				                textStatus);
+							console.log("jqXHR "  + jqXHR)
+							error = jqXHR;
+							var error_text = $.parseJSON(error['responseText']);
+							console.log(error_text);
+							console.log(error_text.errors);
+							if(error_text.errors.email != null){
+							alert("Email " + error_text.errors.email[0]);
+							}
+
+				        },
+				        // callback handler that will be called on completion
+				        // which means, either on success or error
+				        complete: function(){
+				        if(contact){
+							navigator.notification.alert("Contact " + contact.first_name + " added.", null, "Contact Added");
+							contacts = null;
+							$.mobile.changePage( "index.html", { transition: "slideup"} )
+							
+						}
+						else
+						{
+							$("#contact_status").text("Sorry, an error occurred. Please ensure all required fields are completed.");
+						}
+				        $.mobile.hidePageLoadingMsg();
+
+
+				     	} //complete
+
+				    	}); //ajax
+	
+		return false;
+	});
+			
+	});
+	
+	$('#add_invoice').live('pageshow', function(event){
+		$('#invoice_contact_id').empty();
+		if(!user){
+			navigator.notification.alert("You will need to login or sign up first.", null, "No User");
+			return false;
+			
+		}
+		$('#invoice_user_id').val(user['id']);
+		if(!contacts){
+		//alert("add_invoice contacts " + contacts);
+			getContacts("invoice");
+		}
+		
+		else {
+			populateSelect();
+		}
+		
+$("#new_invoice_form").submit(function(event){
+						var invoice = null;
+					    var str = $("#new_invoice_form").serializeArray();
+						console.log("data:  " + str);
+							//validations
+							if(taxable_items_selected()){
+								navigator.notification.alert("There are taxable items but no tax rate entered.", null, "Taxable");
+								return false;
+							}
+
+							function taxable_items_selected() {
+								console.log("in function");
+								var selected = false;
+								var retval = selected;
+								$("input:checkbox:checked").each(function(){
+								            selected = true;
+								});
+								console.log("selected " + selected);
+								if(selected){
+									if($("#invoice_tax_rate").val().length == 0){
+										retval = true;
+										console.log("Retval " + retval);
+									}
+
+								}
+
+
+							return retval;
+
+						    }//function
+						$.mobile.showPageLoadingMsg("a", "Sending details to the server...", "false");
+						$.ajax({
+					        url: "http://billing.breeasy.com/api/v1/invoices.json",
+					        type: "post",
+					        data: str,
+					        dataType: "json",
+
+
+					       	// callback handler that will be called on success
+					        success: function(response, textStatus, jqXHR){
+					            // log a message to the console
+					            console.log("Hooray, it worked!");
+								//$('#results').text("it worked");
+								invoice = response;
+					        },
+					        // callback handler that will be called on error
+					        error: function(jqXHR, textStatus, errorThrown){
+					            // log the error to the console
+					            console.log(
+					                "The following error occurred: "+
+					                textStatus);
+								console.log("Error "  + jqXHR)
+								error = jqXHR;
+								$.each(error, function(index, value) {
+									console.log("error_index " + index);
+								});
+								//var error_text = $.parseJSON(error['responseText']);
+								//console.log(error_text.errors.email[0]);
+								// if(error_text.errors.email != null){
+								// 						$("#response").text("Email " + error_text.errors.email[0]);
+								// 					}
+								// 					if(error_text.errors.password != null){
+								// 						$("#response2").text("Password " + error_text.errors.password[0]);
+								// 					}
+
+					        },
+					        // callback handler that will be called on completion
+					        // which means, either on success or error
+					        complete: function(){
+					        if(invoice){
+					        	console.log(invoice.id);
+								navigator.notification.alert("Invoice created and sent.", null, "Invoice");
+								invoices = null;
+								contacts = null; //refresh contacts b/c when create an invoice balance changes
+								$.mobile.changePage( "index.html", { transition: "slideup"} )									
+							}
+							else
+							{
+								$("#invoice_status").text("Sorry, an error occurred. Please ensure all required fields are completed.");
+							}
+					        $.mobile.hidePageLoadingMsg();
+
+
+					     	} //complete
+
+					    	}); //ajax
+
+			return false;
+		});
+			
+	});
+	$('#edit_account_page').live('pageshow', function(event){
+		if(user_details){
+		 $("#edit_user_detail_form input[id=user_detail_first_name]").val(user_details.first_name);
+		 $("#edit_user_detail_form input[id=user_detail_last_name]").val(user_details.last_name);
+		 $("#edit_user_detail_form input[id=user_detail_title]").val(user_details.title);
+		 $("#edit_user_detail_form input[id=user_detail_company]").val(user_details.company);
+		 $("#edit_user_detail_form input[id=user_detail_phone]").val(user_details.phone);
+		 $("#edit_user_detail_form input[id=user_detail_street]").val(user_details.street);
+		 $("#edit_user_detail_form input[id=user_detail_city]").val(user_details.city);
+		 $("#edit_user_detail_form input[id=user_detail_state]").val(user_details.state);
+		 $("#edit_user_detail_form input[id=user_detail_post_code]").val(user_details.post_code);
+		 $("#edit_user_detail_form input[id=user_detail_country]").val(user_details.country);
+		 $("#edit_user_detail_form input[id=user_detail_user_id]").val(user_details.user_id);
+		console.log("added details");
+		}
+		else{
+			navigator.notification.alert("Your details could not be found.  Please login into the Breeasy Billing app and update your account details.", null, "User Details");
+			
+		}
+
+	$("#edit_user_detail_form").submit(function(event){
+		//var error = false;
+		$.mobile.showPageLoadingMsg("a", "Sending details to the server...", "false");
+	    var str = $("#edit_user_detail_form").serializeArray();
+		console.log("data:  " + str);
+
+		$.ajax({
+	        url: "http://billing.breeasy.com/api/v1/user/update_user_details.json?id="+ user.id,
+	        type: "post",
+	        data: str,
+	        dataType: "json",
+
+	       	// callback handler that will be called on success
+	        success: function(response, textStatus, jqXHR){
+	            // log a message to the console
+	            console.log("Hooray, it worked!");
+				//$('#results').text("it worked");
+				console.log(textStatus);
+				console.log("Success " + response);
+				user_details = response;
+	        },
+	        // callback handler that will be called on error
+	        error: function(jqXHR, textStatus, errorThrown){
+	            // log the error to the console
+	            console.log(
+	                "The following error occurred: "+
+	                textStatus);
+				console.log("Error "  + jqXHR)
+				error = jqXHR;
+				$("#response4").text("Error:  Please check required fields.")
+
+	        },
+	        // callback handler that will be called on completion
+	        // which means, either on success or error
+	        complete: function(){
+	        if(user_details){
+	        navigator.notification.alert("Your details have been updated.", null, "Details");
+	     	getUserDetails();
+			$.mobile.changePage( "index.html", { transition: "slideup"} )									
+			}
+			else
+			{
+
+			}
+	        $.mobile.hidePageLoadingMsg();
+
+	     	} //complete
+
+	    	}); //ajax
+
+		return false;
+
+		}); //submit
+	});
+	$('#user_details').live('pageshow', function(event){
+				user_details = null;
+		
+				$("#signup_success").text("Congratulations!  Your InstaInvoice Account has been created.");
+				$("#user_detail_user_id").val(user['id']);
+				
+				$("#user_detail_form").submit(function(event){
+			//var error = false;
+			$("#response4").text("");
+			$.mobile.showPageLoadingMsg("a", "Sending details to the server...", "false");
+		    var str = $("#user_detail_form").serializeArray();
+			console.log("data:  " + str);
+
+			$.ajax({
+		        url: "http://billing.breeasy.com/api/v1/user/create_user_details.json",
+		        type: "post",
+		        data: str,
+		        dataType: "json",
+
+		       	// callback handler that will be called on success
+		        success: function(response, textStatus, jqXHR){
+		            // log a message to the console
+		            console.log("Hooray, it worked!");
+					//$('#results').text("it worked");
+					console.log(textStatus);
+					console.log("Success " + response);
+					user_details = response;
+		        },
+		        // callback handler that will be called on error
+		        error: function(jqXHR, textStatus, errorThrown){
+		            // log the error to the console
+		            console.log(
+		                "The following error occurred: "+
+		                textStatus);
+					console.log("Error "  + jqXHR)
+					error = jqXHR;
+					$("#response4").text("Error:  Please check required fields.")
+				
+		        },
+		        // callback handler that will be called on completion
+		        // which means, either on success or error
+		        complete: function(){
+		        if(user_details){
+					$("#first_name").text(user_details['first_name']);
+					$("#last_name").text(user_details['last_name']);
+					$("#company").text(user_details['company']);
+					$("#phone_no").text(user_details['phone']);
+					$("#user_name").text(user['email']);
+					$("#id").text(user['id']);
+					$("#sync_status").text("true");
+					$.mobile.changePage( "#home_page", { transition: "slideup"} )
+	
+					
+
+				}
+				else
+				{
+
+				}
+		        $.mobile.hidePageLoadingMsg();
+
+		     	} //complete
+
+		    	}); //ajax
+
+			return false;
+
+			}); //submit
+	});
+	
+    </script>
+    
+
+  </head>
+  <body>
+  <div data-role="page" id="home_page"> 
+	<div data-role="header" data-position="inline"  data-theme="b">
+	  <h1>InstaInvoice</h1>
+  	</div><!-- /header -->
+	<div data-role="content">
+	<h3 id="status"></h3>
+		<div data-role="controlgroup">
+			<a href="add_invoice.html" data-role="button">Create Invoice</a>
+			<!--<a href="time_invoice.html" data-role="button">Create Time Invoice</a>-->
+			<a href="invoices.html" data-role="button">Invoices</a>
+			<a href="payments.html" data-role="button">Payments</a>
+			<a href="#contacts" data-role="button">Contacts</a>
+			<a href="#signup" data-role="button">Sign Up</a>
+			<a href="#login" data-role="button">Login</a>
+			<a href="about.html" data-role="button">About</a>
+		</div>
+	
+	</div> <!-- /content -->
+	<div data-role="footer" data-theme="b">
+	  <h1>A Free App From Breeasy.com</h1>
+	</div><!-- /footer -->
+  </div><!-- /page -->
+  <div data-role="page" id="login">
+  <div data-role="header" data-position="inline"  data-theme="b">
+	   <a href="index.html" data-role="button" data-icon="home">Home</a>
+	  <h1>InstaInvoice</h1>
+	  <a href="edit_account.html" data-role="button" data-icon="gear">Account</a>
+  </div><!-- /header -->
+  <div data-role="content">
+  		<h2 id="response3"></h2>
+  	<table>
+			  <caption>Current Account Details</caption>
+			  <tbody>
+				<tr>
+			      <th>Email:</th><td colspan="2" id="user_name"></td>
+			    </tr>
+			    <tr>
+			 	  <th>Id:</th><td id="id"></td>
+			      <th>Synced:</th><td id="sync_status"></td>
+			    </tr>
+			   	<tr>
+			 	  <th>First Name:</th><td id="first_name"></td>
+			      <th>Last Name:</th><td id="last_name"></td>
+			    </tr>
+			    <tr>
+			 	  <th>Company:</th><td colspan="2" id="company"></td>
+			 	</tr>
+			 	<tr>
+			      <th>Phone:</th><td id="phone_no"></td>
+			    </tr>
+				</tbody>
+	</table>
+	<p>Enter your email address and password you used when you created your InstaInvoice account.  If you have a
+	Breeasy Billing, Invoicing, and Time Tracker App account, you can use that email address and password to activate InstaInvoice on this device.</p>
+
+		<form id="login_form">
+		<div data-role="fieldcontain">
+		<label for="email_address">Email:</label>
+		<input type="text" name="email_address" id="email_address" placeholder="required" />
+		<label for="password">Password:</label>
+		<input type="password" name="password" id="password" placeholder="required"/>
+		
+		<br>
+		<input type="submit" value="Login" />
+		
+		</div><!-- /fieldcontain -->
+		</form>
+		<p>Need an account? <a href=#signup>Sign up Free!</a></p>
+		
+	</div> <!-- /content -->
+ <div data-role="footer" data-theme="b">
+	  <h1>A Free App From Breeasy.com</h1>
+	</div><!-- /footer --> 	
+ 
+  </div> <!--/page-->
+  <div data-role="page" id="signup">
+  <div data-role="header" data-position="inline"  data-theme="b">
+	   <a href="index.html" data-icon="home">Home</a>
+	  <h1>InstaInvoice</h1>
+  </div><!-- /header -->
+  <div data-role="content">
+ 
+	<p>Signing up is easy! - Just fill out the details below and you'll be billing instantly.</br>
+		<h2 id="response"></h2>
+		<h2 id="response2"></h2>
+		<form id="signup_form">
+		<div data-role="fieldcontain">
+		<label for="user[email]">Email Address:</label>
+		<input type="text" name="user[email]" id="user[email]" value="" />
+		<label for="user[password]">Password:</label>
+		<input type="password" name="user[password]" id="user[password]" value="" />
+		
+		<br>
+		<input type="submit" value="Signup" />
+		
+		</div><!-- /fieldcontain -->
+		</form>
+		<p>Have a Breeasy Billing App account? <a href=#login>Login</a></p>
+	</div> <!-- /content -->
+ <div data-role="footer" data-theme="b">
+	  <h1>Free App From Breeasy.com</h1>
+	</div><!-- /footer --> 	
+ 
+  </div> <!--/page-->
+  <div data-role="page" id="user_details">
+<div data-role="header" data-position="inline"  data-theme="b">
+	   <a href="index.html" data-icon="home">Home</a>
+	  <h1>InstaInvoice</h1>
+</div><!-- /header -->
+<div data-role="content">
+	<h2 id="signup_success"></h2>
+	<p>Almost there - Enter some details about you and your company for your invoices.  Fields marked with a * are required.  We recommend you enter as much information as possible.  You can change it later.</br>
+		<h2 id="response4"></h2>
+		<form id="user_detail_form">
+		<div data-role="fieldcontain">
+			<input id="user_detail_user_id" name="user_detail[user_id]" type="hidden" />
+			<input id="user_detail_currency" name="user_detail[currency]" type="hidden" value="USD" />
+			<label for="user_detail_first_name">First name*</label>
+			<input id="user_detail_first_name" name="user_detail[first_name]" size="30" type="text" />
+			<label for="user_detail_last_name">Last name*</label>
+			<input id="user_detail_last_name" name="user_detail[last_name]" size="30" type="text" />
+			<label for="user_detail_title">Title</label>
+			<input id="user_detail_title" name="user_detail[title]" size="30" type="text" />
+			<label for="user_detail_company">Company</label>
+			<input id="user_detail_company" name="user_detail[company]" size="30" type="text" placeholder="Leave blank if no Company Name" />
+			<label for="user_detail_phone">Phone</label>
+			<input id="user_detail_phone" name="user_detail[phone]" size="30" type="text" />
+			<label for="user_detail_street">Street</label>
+			<input id="user_detail_street" name="user_detail[street]" size="30" type="text" />
+			<label for="user_detail_city">City</label>
+			<input id="user_detail_city" name="user_detail[city]" size="30" type="text" />
+			<label for="user_detail_state">State</label>
+			<input id="user_detail_state" name="user_detail[state]" size="30" type="text" />
+			<label for="user_detail_post_code">Post code</label>
+			<input id="user_detail_post_code" name="user_detail[post_code]" size="30" type="text" />
+			<label for="user_detail_country">Country</label>
+			<input id="user_detail_country" name="user_detail[country]" size="30" type="text" />
+		
+		<br>
+		<input type="submit" value="Add My Details" />
+		
+		</div><!-- /fieldcontain -->
+		</form>
+	</div> <!-- /content -->
+<div data-role="footer" data-theme="b">
+	  <h1>A Free App From Breeasy.com</h1>
+	</div><!-- /footer --> 	
+
+</div> <!--/page-->
+<div data-role="page" id="contacts">
+
+<div data-role="header" data-position="inline"  data-theme="b">
+	   <a href="index.html" data-icon="home">Home</a>
+	  <h1>Contacts</h1>
+	  <a href="add_contact.html" data-icon="plus">Add</a>
+  	</div><!-- /header -->
+
+	<div data-role="content">
+	<h2>Your Contacts</h2>
+	<ul data-role="listview" id="contact_list_view" data-filter="true">
+	</ul>
+	</div> <!-- /content -->
+	
+	<div data-role="footer"  data-theme="b">
+		<h1>A Free App From Breeasy.com</h2>
+	</div><!-- /footer -->
+	
+</div><!-- /page -->
+
+  </body>
+</html>

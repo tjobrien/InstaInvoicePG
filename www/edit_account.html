@@ -1,0 +1,65 @@
+<!DOCTYPE html> 
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<title>About InstaInvoice</title> 
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.2.0-rc.2/jquery.mobile-1.2.0-rc.2.min.css" />
+	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.2.0-rc.2/jquery.mobile-1.2.0-rc.2.min.js"></script>
+	<script type="text/javascript" src="cordova-2.0.0.js"></script>
+	
+</head> 
+
+<body> 
+
+<div data-role="page" id="edit_account_page">
+
+<div data-role="header" data-position="inline"  data-theme="b">
+	   <a href="index.html" data-icon="home">Home</a>
+	  <h1>InstaInvoice</h1>
+  	</div><!-- /header -->
+
+	<div data-role="content">
+	<p>Update your account details</br>
+		<h2 id="response6"></h2>
+		<form id="edit_user_detail_form">
+		<div data-role="fieldcontain">
+			<input id="user_detail_user_id" name="user_detail[user_id]" type="hidden" />
+			<label for="user_detail_first_name">First name*</label>
+			<input id="user_detail_first_name" name="user_detail[first_name]" size="30" type="text" />
+			<label for="user_detail_last_name">Last name*</label>
+			<input id="user_detail_last_name" name="user_detail[last_name]" size="30" type="text" />
+			<label for="user_detail_title">Title</label>
+			<input id="user_detail_title" name="user_detail[title]" size="30" type="text" />
+			<label for="user_detail_company">Company</label>
+			<input id="user_detail_company" name="user_detail[company]" size="30" type="text" />
+			<label for="user_detail_phone">Phone</label>
+			<input id="user_detail_phone" name="user_detail[phone]" size="30" type="text" />
+			<label for="user_detail_street">Street</label>
+			<input id="user_detail_street" name="user_detail[street]" size="30" type="text" />
+			<label for="user_detail_city">City</label>
+			<input id="user_detail_city" name="user_detail[city]" size="30" type="text" />
+			<label for="user_detail_state">State</label>
+			<input id="user_detail_state" name="user_detail[state]" size="30" type="text" />
+			<label for="user_detail_post_code">Post code</label>
+			<input id="user_detail_post_code" name="user_detail[post_code]" size="30" type="text" />
+			<label for="user_detail_country">Country</label>
+			<input id="user_detail_country" name="user_detail[country]" size="30" type="text" />
+		
+		<br>
+		<input type="submit" value="Update Account" />
+		
+		</div><!-- /fieldcontain -->
+		</form>
+	</div><!-- /content -->
+	
+	<div data-role="footer" data-theme="b">
+	  <h1>A Free App From Breeasy.com</h1>
+	</div><!-- /footer --> 	
+	
+</div><!-- /page -->
+
+</body>
+</html>
